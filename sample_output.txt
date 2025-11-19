@@ -1,0 +1,27 @@
+Operation: ADD (SIGNED)
+Decimal: 15
+------------------------------------------------
+Operation: SUB (UNSIGNED)
+Decimal: 50
+------------------------------------------------
+Operation: NEG (SIGNED)
+Decimal: 25
+------------------------------------------------
+Operation: ADD (SIGNED)
+Decimal: 128
+------------------------------------------------
+Operation: ADD (UNSIGNED)
+Decimal: 256
+------------------------------------------------
+Operation: SUB (SIGNED)
+Decimal: -127
+------------------------------------------------
+Operation: SUB (UNSIGNED)
+Decimal: 200
+------------------------------------------------
+Operation: ADD (SIGNED)
+Decimal: -30
+------------------------------------------------
+Operation: NEG (SIGNED)
+Decimal: 1
+------------------------------------------------
