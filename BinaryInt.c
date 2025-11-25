@@ -1,5 +1,7 @@
 #include "BinaryInt.h"
 
+#include <sys/errno.h>
+
 // Internal representation stores bits so that coefficient of 2^i is at index i.
 
 /**
@@ -34,7 +36,6 @@ bool BI_Add(uint8_t Sum[], const uint8_t Left[],
     // bitwise operations
     // use XOR to get the sum (without carry)
     // use AND to get carry bits
-    // use left shift to add carry bits
 
     // Loop through all 32 bits
     int carry = 0;
@@ -48,8 +49,6 @@ bool BI_Add(uint8_t Sum[], const uint8_t Left[],
         // Calc new carry (so overflow from adding)
         carry = (x & y) || (x & carry) || (y & carry); // x + y OR x + carry OR y + carry
     }
-
-    BI_fprintf(stdout, Sum, "Actual Sum: \t", "\n");
 
     // Return false is an overflow occurs
     if (DR == UNSIGNED) {
@@ -89,8 +88,18 @@ bool BI_Add(uint8_t Sum[], const uint8_t Left[],
 bool BI_Sub(uint8_t Diff[], const uint8_t Left[], 
 		const uint8_t Right[], enum DataRep DR) 
 {
+    uint8_t NegRight[NUM_BITS];
+    uint8_t one[NUM_BITS];
+    BI_Create(one, 1);
 
-   return false;
+    // Convert the right num to its 2's comp
+    for (int i = 0; i < NUM_BITS; i++) {
+        NegRight[i] = !Right[i];    // invert
+    }
+    BI_Add(NegRight, NegRight, one, UNSIGNED); // add 1
+
+    // Add pos + neg to simulate subtraction
+    return BI_Add(Diff, Left, NegRight, DR);
 }
 
 /**
@@ -103,8 +112,19 @@ bool BI_Sub(uint8_t Diff[], const uint8_t Left[],
  *          true otherwise
  */
 bool BI_Neg(uint8_t Neg[], const uint8_t Right[]) {
+    // 2's comp
 
-   return false;
+    // Invert bits
+    for (int i = 0; i < NUM_BITS; i++) {
+        Neg[i] = !Right[i];
+    }
+
+    // Add 1
+    uint8_t one[NUM_BITS];
+    BI_Create(one, 1);
+    BI_Add(Neg, Neg, one, UNSIGNED);
+
+    return true;
 }
 
 /**
@@ -166,31 +186,6 @@ void BI_fprintf(FILE* fp, const uint8_t BinInt[], char* prefix, char* suffix) {
       fprintf(fp, suffix);
 }
 
-// TEST MAIN
-int main(void) {
-    uint8_t A[NUM_BITS];
-    int64_t src1 = -45;
-    uint8_t B[NUM_BITS];
-    int64_t src2 = 15;
-    uint8_t C[NUM_BITS];
-    int64_t src3 = src1+src2;
-    uint8_t Sum[NUM_BITS];
-
-    BI_Create(A, src1);
-    BI_Create(B, src2);
-    BI_Create(C, src3);
-
-    BI_fprintf(stdout, A, "Binary Num1: \t", "\n");
-    BI_fprintf(stdout, B, "Binary Num2: \t", "\n");
-    BI_fprintf(stdout, C, "Correct Sum: \t", "\n");
-    printf("Decimal: \t%" PRId64 "\n", BI_ToDecimal(C, SIGNED));
-    bool val = BI_Add(Sum, A, B, SIGNED);
-    printf("Overflow: \t%d\n", !val);
-
-    return 0;
-}
-
-/*
 int main(void) {
     FILE *fp = fopen("input.txt", "r");
     if (!fp) {
@@ -217,7 +212,7 @@ int main(void) {
                    &srcA, &srcB, opStr, repStr) != 4) {
             fprintf(out, "Skipping invalid line: %s", line);
             continue;
-        }
+                   }
 
         enum DataRep rep = (strcmp(repStr, "UNSIGNED") == 0) ? UNSIGNED : SIGNED;
 
@@ -258,4 +253,3 @@ int main(void) {
     fclose(out);
     return 0;
 }
-*/
