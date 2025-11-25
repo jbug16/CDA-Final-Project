@@ -28,11 +28,52 @@ void BI_Create(uint8_t BinInt[], int64_t Src) {
  *   Ret:   false if overflow occurs when computing sum of Left[] and Right[];
  *          true otherwise
  */
-bool BI_Add(uint8_t Sum[], const uint8_t Left[], 
-		const uint8_t Right[], enum DataRep DR) 
+bool BI_Add(uint8_t Sum[], const uint8_t Left[],
+                const uint8_t Right[], enum DataRep DR)
 {
+    // bitwise operations
+    // use XOR to get the sum (without carry)
+    // use AND to get carry bits
+    // use left shift to add carry bits
 
-   return false;
+    // Loop through all 32 bits
+    int carry = 0;
+    for (int i = 0; i < NUM_BITS; i++) {
+        int x = Left[i];
+        int y = Right[i];
+
+        // Calc sum
+        Sum[i] = x ^ y ^ carry; // x XOR y XOR carry = x + y + carry
+
+        // Calc new carry (so overflow from adding)
+        carry = (x & y) || (x & carry) || (y & carry); // x + y OR x + carry OR y + carry
+    }
+
+    BI_fprintf(stdout, Sum, "Actual Sum: \t", "\n");
+
+    // Return false is an overflow occurs
+    if (DR == UNSIGNED) {
+        // If there is a carry left, there is an overflow.
+        // So if carry == 0, we return true, which means
+        // there was NO overflow
+        return carry == 0;
+    }
+    else {
+        // Get most significant bit for each num
+        int leftSign = Left[NUM_BITS-1];
+        int rightSign = Right[NUM_BITS-1];
+        int sumSign = Sum[NUM_BITS-1];
+
+        // If neg + neg = pos
+        if ((leftSign == 1 && rightSign == 1 && sumSign == 0)
+            ||
+        // If pos + pos = neg
+            (leftSign == 0 && rightSign == 0 && sumSign == 1))
+            return false;
+    }
+
+    // No overflow at all
+    return true;
 }
 
 /**
@@ -89,15 +130,15 @@ int64_t BI_ToDecimal(uint8_t Num[], enum DataRep DR)
 
     // Convert if signed
     if (DR == SIGNED) {
-        if (Result & (1ULL << 31)) {
-            // Negative
-            Result += (1ULL << 32) - 1;
+        // Number is negative
+        if (Num[NUM_BITS-1]) {
+            // Result - 2^32
+            return Result - (1ULL << 32);
         }
     }
 
     return Result;
 }
-
 
 /**
  *   Prints the binary representation, with formatting.
@@ -128,13 +169,23 @@ void BI_fprintf(FILE* fp, const uint8_t BinInt[], char* prefix, char* suffix) {
 // TEST MAIN
 int main(void) {
     uint8_t A[NUM_BITS];
-    int64_t src = 127;
+    int64_t src1 = -45;
+    uint8_t B[NUM_BITS];
+    int64_t src2 = 15;
+    uint8_t C[NUM_BITS];
+    int64_t src3 = src1+src2;
+    uint8_t Sum[NUM_BITS];
 
-    BI_Create(A, src);
+    BI_Create(A, src1);
+    BI_Create(B, src2);
+    BI_Create(C, src3);
 
-    int64_t val = BI_ToDecimal(A, SIGNED);
-    BI_fprintf(stdout, A, "Binary Num: ", "\n");
-    printf("%lld\n", val);
+    BI_fprintf(stdout, A, "Binary Num1: \t", "\n");
+    BI_fprintf(stdout, B, "Binary Num2: \t", "\n");
+    BI_fprintf(stdout, C, "Correct Sum: \t", "\n");
+    printf("Decimal: \t%" PRId64 "\n", BI_ToDecimal(C, SIGNED));
+    bool val = BI_Add(Sum, A, B, SIGNED);
+    printf("Overflow: \t%d\n", !val);
 
     return 0;
 }
